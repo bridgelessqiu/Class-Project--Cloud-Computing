@@ -90,7 +90,7 @@ def cascade(A, v_time, v_state, p, k):
         # A fixed point is reached under zero infection
         if np.array_equal(b_2, zero):
             return v_state, v_time
-
+ 
 
 # ------------------------------------------------------ #
 #       Learn the structure of bidirectional tree        #
@@ -106,8 +106,8 @@ def learn_tree_structure(A, p, k, num_of_cascade):
     H = {} # As suggested in the paper, this is the fraction of cascades for which both i and j were infected
     
     # Initilize all to 0
-    for i in range(n):
-        for j in range(i, n):
+    for i in range(n - 1):
+        for j in range(i + 1, n):
             H[(i, j)] = 0
     
     # Run MANY cascades
@@ -116,8 +116,8 @@ def learn_tree_structure(A, p, k, num_of_cascade):
         v_time = [] # Initially only one infected vertex
         v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
        
-        for i in range(n):
-            for j in range(i, n):
+        for i in range(n - 1):
+            for j in range(i + 1, n):
                 if v_state[i] == v_state[j] == 1:
                     H[(i, j)] += 1
     
@@ -156,10 +156,60 @@ def learn_tree_structure(A, p, k, num_of_cascade):
 
 
 # ---------------------------------------------------- #
-#        Learn the weights of bidirectional tree        #
+#       Learn the weights of bidirectional tree        #
 # ---------------------------------------------------- #
-def 
-        
+def learn_tree_weight(A, p, k, num_of_cascade):
+    n = np.shape(A)[0]
+    H = {} # The fraction of cascades for which i and j both infection, and i reported before j
+    J = [0] * n # The fraction of infection for which i got infected  
+
+    # Initilize all to 0
+    for i in range(n - 1):
+        for j in range(i + 1, n):
+            H[(i, j)] = 0
+
+    # Run MANY cascades
+    for _ in range(num_of_cascade):
+        v_state = [] # Initially only one infected vertex
+        v_time = [] # Initially only one infected vertex
+        v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
+
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                if v_state[i] == 1:
+                    J[i] += float(1 / num_of_cascade)
+                if v_state[j] == 1:
+                    J[j] += float(1 / num_of_cascade)
+                if (v_state[i] == v_state[j] == 1) and (v_time[i] < v_time[j]):
+                    H[(i, j)] += float(1 / num_of_cascade)
+                elif (v_state[i] == v_state[j] == 1) and (v_time[i] > v_time[j]):
+                    H[(j, i)] += float(1 / num_of_cascade)
+   
+    # The predicted weight
+    predicted_p = np.zero(n, n)
+
+    for i in range(n):
+        for j in range(n):
+            predicted_p[i, j] = float((H[(i, j)] * 0.5 - H[(j, i)] * 0.5) / (J[i] * (0.025) + H[(i, j)] * 0.5 - H[(j, i)] * 0.5)) 
+   
+
+    A_dense = sparse.csr_matrix.todense(A)
+
+    sum = 0
+    # Compute the mean absolute error
+    for i in range(n-1):
+        for j in range(i + 1, n):
+            if A_dense[i, j] == 1:
+                sum += abs(float(predicted_p[i, j] - p))
+            
+    mae = float(sum / (n - 1))
+
+    return mae
+     
+
+# ------------------------------------------------------------ #
+#      Learn the structure from the degree bounded graph       #
+# ------------------------------------------------------------ #
 
     
-    
+

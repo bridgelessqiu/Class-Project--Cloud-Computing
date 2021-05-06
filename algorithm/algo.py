@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import random
 from scipy import sparse
 import networkx as nx
 
@@ -56,7 +57,7 @@ def cascade(A, v_time, v_state, p, k):
     b_4[b_4 == 0.0] = 1.0
     b_4[b_4 < 0.0] = 0.0
 
-    for day in range(1, k): # Note that at day 0, only one vertex is infected which is given as a problem input
+    for day in range(2, k): # Note that at day 0, only one vertex is infected which is given as a problem input
         b_4_last = b_4 
         b_2_last = b_2
 
@@ -91,7 +92,9 @@ def cascade(A, v_time, v_state, p, k):
         # A fixed point is reached under zero infection
         if np.array_equal(b_2, zero):
             return v_state, v_time
- 
+
+    print("the maximum number of iterations is reached")
+    return v_state, v_time
 
 # ------------------------------------------------------ #
 #       Learn the structure of bidirectional tree        #
@@ -113,8 +116,11 @@ def learn_tree_structure(A, p, k, num_of_cascade):
     
     # Run MANY cascades
     for _ in range(num_of_cascade):
-        v_state = [] # Initially only one infected vertex
-        v_time = [] # Initially only one infected vertex
+        infected = random.randint(0, n-1) # Initially only one infected vertex
+        v_state = np.zeros((n, 1), dtype = 'float') # Initially only one infected vertex
+        v_state[infected, 0] = 1
+        v_time = v_state
+
         v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
        
         for i in range(n - 1):
@@ -138,7 +144,7 @@ def learn_tree_structure(A, p, k, num_of_cascade):
                 selected[u] = 1
                 selected[v] = 1
             total += 1
-        eles:
+        else:
             break
    
     # Compute EC
@@ -150,7 +156,7 @@ def learn_tree_structure(A, p, k, num_of_cascade):
         if A[u, v] == 1:
             num_of_correct_edges += 1
 
-    EC = float(num_of_correct_edges / (n-1))
+    EC = float(2 * num_of_correct_edges / (n-1))
 
     return EC
 

@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from scipy import sparse
 import networkx as nx
 
@@ -106,8 +107,8 @@ def learn_tree_structure(A, p, k, num_of_cascade):
     H = {} # As suggested in the paper, this is the fraction of cascades for which both i and j were infected
     
     # Initilize all to 0
-    for i in range(n - 1):
-        for j in range(i + 1, n):
+    for i in range(n):
+        for j in range(n):
             H[(i, j)] = 0
     
     # Run MANY cascades
@@ -164,8 +165,8 @@ def learn_tree_weight(A, p, k, num_of_cascade):
     J = [0] * n # The fraction of infection for which i got infected  
 
     # Initilize all to 0
-    for i in range(n - 1):
-        for j in range(i + 1, n):
+    for i in range(n):
+        for j in range(n):
             H[(i, j)] = 0
 
     # Run MANY cascades
@@ -208,8 +209,64 @@ def learn_tree_weight(A, p, k, num_of_cascade):
      
 
 # ------------------------------------------------------------ #
-#      Learn the structure from the degree bounded graph       #
+#        Learn the weights of the degree bounded graph         #
 # ------------------------------------------------------------ #
+def lean_degree_bounded_structure(A, p, k, num_of_cascade):
+    n = np.shape(A)[0]
+    F = {} # Defined in the paper
+    H = {} # Defined in the paper
+    J = [0] * n # The fraction of infection for which i got infected
+
+    # Initilize all to 0
+    for i in range(n):
+        for j in range(n):
+            F[(i, j)] = 0
+            H[(i, j)] = 0
+
+    # Run MANY cascades
+    for _ in range(num_of_cascade):
+        v_state = [] # Initially only one infected vertex
+        v_time = [] # Initially only one infected vertex
+        v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
+
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                if v_state[i] == 1:
+                    J[i] += float(1 / num_of_cascade)
+                if v_state[j] == 1:
+                    J[j] += float(1 / num_of_cascade)
+                if v_state[i] == v_state[j] == 1:
+                    F[(i, j)] += float(1 / num_of_cascade)
+                    F[(j, i)] += float(1 / num_of_cascade)
+                    if v_time[i] > v_time[j]:
+                        H[(i, j)] += float(1 / num_of_cascade)
+                    elif v_time[i] > v_time[j]:
+                        H[(j, i)] += float(1 / num_of_cascade)
+    
+    predicted_p = np.zero(n, n)
+
+    for i in range(n):
+        for j in range(n):
+            V_ij = (F[(i, j)] ** 2) / (H[(i, j)] ** 2 + n * J[i] * J[j])
+            V_ji = (F[(j, i)] ** 2) / (H[(j, i)] ** 2 + n * J[i] * J[j])
+            delta = 0.025 - 4 * (V_ij * 0.5 - V_ji * 0.5) * 0.5 *  (V_ij - V_ji)
+            predicted_p[i, j] = float((V_ji - V_ij) / 0.025 + math.sqrt(delta))
+
+    A_dense = sparse.csr_matrix.todense(A)
+    sum = 0
+    # Compute the mean absolute error
+    for i in range(n-1):
+        for j in range(i + 1, n):
+            if A_dense[i, j] == 1:
+                sum += abs(float(predicted_p[i, j] - p))
+    mae = float(sum / (n - 1))
+    return mae
+
+
+
+
+
+
 
     
 

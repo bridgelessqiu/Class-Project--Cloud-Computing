@@ -177,27 +177,31 @@ def learn_tree_weight(A, p, k, num_of_cascade):
 
     # Run MANY cascades
     for _ in range(num_of_cascade):
-        v_state = [] # Initially only one infected vertex
-        v_time = [] # Initially only one infected vertex
+        infected = random.randint(0, n-1) # Initially only one infected vertex
+        v_state = np.zeros((n, 1), dtype = 'float') # Initially only one infected vertex
+        v_state[infected, 0] = 1
+        v_time = v_state
+
         v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
+        
+        for i in range(n):
+            if v_state[i] == 1:
+                J[i] += float(1 / num_of_cascade)
 
         for i in range(n - 1):
             for j in range(i + 1, n):
-                if v_state[i] == 1:
-                    J[i] += float(1 / num_of_cascade)
-                if v_state[j] == 1:
-                    J[j] += float(1 / num_of_cascade)
                 if (v_state[i] == v_state[j] == 1) and (v_time[i] < v_time[j]):
                     H[(i, j)] += float(1 / num_of_cascade)
                 elif (v_state[i] == v_state[j] == 1) and (v_time[i] > v_time[j]):
                     H[(j, i)] += float(1 / num_of_cascade)
    
     # The predicted weight
-    predicted_p = np.zero(n, n)
+    predicted_p = np.zeros((n, n))
 
     for i in range(n):
         for j in range(n):
-            predicted_p[i, j] = float((H[(i, j)] * 0.5 - H[(j, i)] * 0.5) / (J[i] * (0.025) + H[(i, j)] * 0.5 - H[(j, i)] * 0.5)) 
+            if (J[i] * (0.025) + H[(i, j)] * 0.5 - H[(j, i)] * 0.5) != 0:
+                predicted_p[i, j] = float((H[(i, j)] * 0.5 - H[(j, i)] * 0.5) / (J[i] * (0.025) + H[(i, j)] * 0.5 - H[(j, i)] * 0.5))
    
 
     A_dense = sparse.csr_matrix.todense(A)
@@ -249,7 +253,7 @@ def lean_degree_bounded_structure(A, p, k, num_of_cascade):
                     elif v_time[i] > v_time[j]:
                         H[(j, i)] += float(1 / num_of_cascade)
     
-    predicted_p = np.zero(n, n)
+    predicted_p = np.zeros((n, n)) 
 
     for i in range(n):
         for j in range(n):
@@ -267,3 +271,4 @@ def lean_degree_bounded_structure(A, p, k, num_of_cascade):
                 sum += abs(float(predicted_p[i, j] - p))
     mae = float(sum / (n - 1))
     return mae
+

@@ -261,12 +261,3 @@ def lean_degree_bounded_structure(A, p, k, num_of_cascade):
                 sum += abs(float(predicted_p[i, j] - p))
     mae = float(sum / (n - 1))
     return mae
-
-
-
-
-
-
-
-    
-

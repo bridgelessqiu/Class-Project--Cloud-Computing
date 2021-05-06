@@ -161,7 +161,6 @@ def learn_tree_structure(A, p, k, num_of_cascade):
     return EC
 
 
-
 # ---------------------------------------------------- #
 #       Learn the weights of bidirectional tree        #
 # ---------------------------------------------------- #
@@ -216,12 +215,64 @@ def learn_tree_weight(A, p, k, num_of_cascade):
     mae = float(sum / (n - 1))
 
     return mae
-     
 
+
+# ----------------------------------------------------------------- #
+#           Learn the structure of the degree bounded graph         #
+# ----------------------------------------------------------------- #
+def learn_degree_bounded_structure(A, p, k, max_d, num_of_cascade):
+    n = np.shape(A)[0]
+    H = {} # As suggested in the paper, this is the fraction of cascades for which both i and j were infected
+
+    # Initilize all to 0
+    for i in range(n):
+        for j in range(n):
+            H[(i, j)] = 0
+
+    # Run MANY cascades
+    for _ in range(num_of_cascade):
+        infected = random.randint(0, n-1) # Initially only one infected vertex
+        v_state = np.zeros((n, 1), dtype = 'float') # Initially only one infected vertex
+        v_state[infected, 0] = 1
+        v_time = v_state
+
+        v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
+
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                if v_state[i] == v_state[j] == 1:
+                    H[(i, j)] += 1
+
+        # Sort H in descending order
+        sorted_H = dict(sorted(H.items(), key=lambda item: item[1],  reverse = True))
+
+    # Avoid adding too many edges which violates the maximum degree
+    degree = [0] * n
+    edges = []
+    for key, value in sorted_H.items():
+        u = key[0]
+        v = key[1]
+        if (degree[v] < max_d) and (degree[v] < max_d):
+            edges.append((u, v))
+            degree[u] += 1
+            degree[v] += 1
+    
+    # Compute EC
+    num_of_correct_edges = 0
+    A_dense = sparse.csr_matrix.todense(A)
+    for e in edges:
+        u = e[0]
+        v = e[1]
+        if A[u, v] == 1:
+            num_of_correct_edges += 1
+
+    EC = float(2 * num_of_correct_edges / (n-1))
+
+    return EC
 # ------------------------------------------------------------ #
 #        Learn the weights of the degree bounded graph         #
 # ------------------------------------------------------------ #
-def lean_degree_bounded_structure(A, p, k, num_of_cascade):
+def lean_degree_bounded_weight(A, p, k, num_of_cascade):
     n = np.shape(A)[0]
     F = {} # Defined in the paper
     H = {} # Defined in the paper

@@ -177,7 +177,22 @@ def learn_tree_structure(A, p, k, num_of_cascade):
 #       Learn the weights of bidirectional tree        #
 # ---------------------------------------------------- #
 def learn_tree_weight(A, p, k, num_of_cascade):
-    
+    """
+    Description
+    -----------
+    This algorithm recovers the weights of trees. For deails, please see the paper
+
+    Parameters
+    ----------
+    A: The adjacency matrix of the graph
+    p: The default transmission probability
+    k: The maximum number of days (iterations) for each cascade
+    num_of_cascades: The number of cascades to run
+
+    Output
+    ------
+    The algorithm returns the mean absolute error
+    """
     n = np.shape(A)[0]
     H = {} # The fraction of cascades for which i and j both infection, and i reported before j
     J = [0] * n # The fraction of infection for which i got infected  
@@ -234,8 +249,25 @@ def learn_tree_weight(A, p, k, num_of_cascade):
 #           Learn the structure of the degree bounded graph         #
 # ----------------------------------------------------------------- #
 def learn_degree_bounded_structure(A, p, k, max_d, num_of_cascade):
+    """
+    Description
+    -----------
+    This algorithm recovers the structure of degree-bounded graphs
+
+    Parameters
+    ----------
+    A: The adjacency matrix of the graph
+    p: The default transmission probability
+    k: The maximum number of days (iterations) for each cascade
+    max_d: The maximum degree of the graph
+    num_of_cascades: The number of cascades to run
+
+    Output
+    -------
+    The algorithm returns the edge correctness
+    """
     n = np.shape(A)[0]
-    H = {} # As suggested in the paper, this is the fraction of cascades for which both i and j were infected
+    H = {} 
 
     # Initilize all to 0
     for i in range(n):
@@ -271,6 +303,7 @@ def learn_degree_bounded_structure(A, p, k, max_d, num_of_cascade):
             degree[v] += 1
     
     # Compute EC
+    offset = 2
     num_of_correct_edges = 0
     A_dense = sparse.csr_matrix.todense(A)
     for e in edges:
@@ -279,7 +312,7 @@ def learn_degree_bounded_structure(A, p, k, max_d, num_of_cascade):
         if A[u, v] == 1:
             num_of_correct_edges += 1
 
-    EC = float(2 * num_of_correct_edges /(10 * (n-1))) # the average degree is 10
+    EC = float(offset * num_of_correct_edges /(10 * (n-1))) # the average degree is 10
 
     return EC
 
@@ -287,6 +320,22 @@ def learn_degree_bounded_structure(A, p, k, max_d, num_of_cascade):
 #        Learn the weights of the degree bounded graph         #
 # ------------------------------------------------------------ #
 def learn_degree_bounded_weight(A, p, k, num_of_cascade):
+    """
+    Description
+    -----------
+    This algorithm recovers the weights of degree bounded graph
+
+    Parameters
+    -----------
+    A: The adjacency matrix of the graph
+    p: The default transmission probability
+    k: The maximum number of days (iterations) for each cascade
+    num_of_cascades: The number of cascades to run
+
+    Output
+    -------
+    The algorithm returns mean absolte errors
+    """
     n = np.shape(A)[0]
     nc = num_of_cascade
     F = {} # Defined in the paper
@@ -323,7 +372,8 @@ def learn_degree_bounded_weight(A, p, k, num_of_cascade):
                         H[(j, i)] += float(1 / num_of_cascade)
     
     predicted_p = np.zeros((n, n))
-
+    
+    # Defined in the paper
     for i in range(n):
         for j in range(n):
             V_ij = V_ji = 0
@@ -338,11 +388,12 @@ def learn_degree_bounded_weight(A, p, k, num_of_cascade):
 
     A_dense = sparse.csr_matrix.todense(A)
     sum = 0
+    offset = 2
     # Compute the mean absolute error
     for i in range(n-1):
         for j in range(i + 1, n):
             if A_dense[i, j] == 1:
                 sum += abs(float(predicted_p[i, j] - p))
 
-    mae = float(2 * sum / (n * math.log(nc))) # this needs to be changed.
+    mae = float(offset * sum / (n * math.log(nc))) # this needs to be changed
     return mae

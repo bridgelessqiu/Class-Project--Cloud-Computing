@@ -1,0 +1,20 @@
+The time in seconds for degree bounded graph of size 500 with 10 cascades is: 1.929 s
+The edge correctness is:0.01804
+The time in seconds for degree bounded graph of size 1000 with 10 cascades is: 8.065 s
+The edge correctness is:0.01502
+The time in seconds for degree bounded graph of size 1500 with 10 cascades is: 19.047 s
+The edge correctness is:0.00734
+The time in seconds for degree bounded graph of size 2000 with 10 cascades is: 33.002 s
+The edge correctness is:0.0095
+The time in seconds for degree bounded graph of size 2500 with 10 cascades is: 55.095 s
+The edge correctness is:0.002
+The time in seconds for degree bounded graph of size 3000 with 10 cascades is: 75.04 s
+The edge correctness is:0.00333
+The time in seconds for degree bounded graph of size 3500 with 10 cascades is: 105.59 s
+The edge correctness is:0.00372
+The time in seconds for degree bounded graph of size 4000 with 10 cascades is: 134.649 s
+The edge correctness is:0.0025
+The time in seconds for degree bounded graph of size 4500 with 10 cascades is: 173.034 s
+The edge correctness is:0.00356
+The time in seconds for degree bounded graph of size 5000 with 10 cascades is: 217.098 s
+The edge correctness is:0.0028

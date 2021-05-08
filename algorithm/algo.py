@@ -104,6 +104,17 @@ def learn_tree_structure(A, p, k, num_of_cascade):
     Description
     -----------
     This algorithm recovers the structures of trees under the extreme noise setting. For deails, please see the paper
+
+    Parameters
+    ----------
+    A: The adjacency matrix of the graph
+    p: The default transmission probability
+    k: The maximum number of days (iterations) for each cascade
+    num_of_cascades: The number of cascades to run
+
+    Output
+    -------
+    The algorithm returns the edge correctness.
     """
 
     n = np.shape(A)[0]
@@ -118,8 +129,8 @@ def learn_tree_structure(A, p, k, num_of_cascade):
     for _ in range(num_of_cascade):
         infected = random.randint(0, n-1) # Initially only one infected vertex
         v_state = np.zeros((n, 1), dtype = 'float') # Initially only one infected vertex
-        v_state[infected, 0] = 1
-        v_time = v_state
+        v_state[infected, 0] = 1 
+        v_time = v_state # The infection time is 1
 
         v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
        
@@ -146,7 +157,8 @@ def learn_tree_structure(A, p, k, num_of_cascade):
             total += 1
         else:
             break
-   
+    
+    offset = 2 # This is needed to correctly compute EC
     # Compute EC
     num_of_correct_edges = 0
     A_dense = sparse.csr_matrix.todense(A)
@@ -156,7 +168,7 @@ def learn_tree_structure(A, p, k, num_of_cascade):
         if A[u, v] == 1:
             num_of_correct_edges += 1
 
-    EC = float(2 * num_of_correct_edges / (n-1))
+    EC = float(offset * num_of_correct_edges / (n-1))
 
     return EC
 
@@ -165,6 +177,7 @@ def learn_tree_structure(A, p, k, num_of_cascade):
 #       Learn the weights of bidirectional tree        #
 # ---------------------------------------------------- #
 def learn_tree_weight(A, p, k, num_of_cascade):
+    
     n = np.shape(A)[0]
     H = {} # The fraction of cascades for which i and j both infection, and i reported before j
     J = [0] * n # The fraction of infection for which i got infected  
@@ -266,14 +279,16 @@ def learn_degree_bounded_structure(A, p, k, max_d, num_of_cascade):
         if A[u, v] == 1:
             num_of_correct_edges += 1
 
-    EC = float(2 * num_of_correct_edges / (n-1))
+    EC = float(2 * num_of_correct_edges /(10 * (n-1))) # the average degree is 10
 
     return EC
+
 # ------------------------------------------------------------ #
 #        Learn the weights of the degree bounded graph         #
 # ------------------------------------------------------------ #
-def lean_degree_bounded_weight(A, p, k, num_of_cascade):
+def learn_degree_bounded_weight(A, p, k, num_of_cascade):
     n = np.shape(A)[0]
+    nc = num_of_cascade
     F = {} # Defined in the paper
     H = {} # Defined in the paper
     J = [0] * n # The fraction of infection for which i got infected
@@ -286,16 +301,19 @@ def lean_degree_bounded_weight(A, p, k, num_of_cascade):
 
     # Run MANY cascades
     for _ in range(num_of_cascade):
-        v_state = [] # Initially only one infected vertex
-        v_time = [] # Initially only one infected vertex
+        infected = random.randint(0, n-1) # Initially only one infected vertex
+        v_state = np.zeros((n, 1), dtype = 'float') # Initially only one infected vertex
+        v_state[infected, 0] = 1
+        v_time = v_state
+
         v_state, v_time = cascade(A, v_time, v_state, p, k) # run the cascade
+
+        for i in range(n):
+            if v_state[i] == 1:
+                J[i] += float(1 / num_of_cascade)
 
         for i in range(n - 1):
             for j in range(i + 1, n):
-                if v_state[i] == 1:
-                    J[i] += float(1 / num_of_cascade)
-                if v_state[j] == 1:
-                    J[j] += float(1 / num_of_cascade)
                 if v_state[i] == v_state[j] == 1:
                     F[(i, j)] += float(1 / num_of_cascade)
                     F[(j, i)] += float(1 / num_of_cascade)
@@ -304,14 +322,19 @@ def lean_degree_bounded_weight(A, p, k, num_of_cascade):
                     elif v_time[i] > v_time[j]:
                         H[(j, i)] += float(1 / num_of_cascade)
     
-    predicted_p = np.zeros((n, n)) 
+    predicted_p = np.zeros((n, n))
 
     for i in range(n):
         for j in range(n):
-            V_ij = (F[(i, j)] ** 2) / (H[(i, j)] ** 2 + n * J[i] * J[j])
-            V_ji = (F[(j, i)] ** 2) / (H[(j, i)] ** 2 + n * J[i] * J[j])
+            V_ij = V_ji = 0
+            if (H[(i, j)] ** 2 + n * J[i] * J[j]) != 0:
+                V_ij = (F[(i, j)] ** 2) / (H[(i, j)] ** 2 + n * J[i] * J[j])
+            if (H[(j, i)] ** 2 + n * J[i] * J[j]) != 0:
+                V_ji = (F[(j, i)] ** 2) / (H[(j, i)] ** 2 + n * J[i] * J[j])
+
             delta = 0.025 - 4 * (V_ij * 0.5 - V_ji * 0.5) * 0.5 *  (V_ij - V_ji)
-            predicted_p[i, j] = float((V_ji - V_ij) / 0.025 + math.sqrt(delta))
+            if (0.025 + math.sqrt(delta)) != 0:
+                predicted_p[i, j] = float((V_ji - V_ij) / (0.025 + math.sqrt(delta)))
 
     A_dense = sparse.csr_matrix.todense(A)
     sum = 0
@@ -320,6 +343,6 @@ def lean_degree_bounded_weight(A, p, k, num_of_cascade):
         for j in range(i + 1, n):
             if A_dense[i, j] == 1:
                 sum += abs(float(predicted_p[i, j] - p))
-    mae = float(sum / (n - 1))
-    return mae
 
+    mae = float(2 * sum / (n * math.log(nc))) # this needs to be changed.
+    return mae

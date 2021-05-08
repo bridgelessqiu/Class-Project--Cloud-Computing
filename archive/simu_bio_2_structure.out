@@ -1,0 +1,12 @@
+The time in seconds for real network of size 2831 with 10 cascades is: 93.883 s
+The edge correctness is:0.0023
+The time in seconds for real network of size 2831 with 100 cascades is: 934.51 s
+The edge correctness is:0.01046
+The time in seconds for real network of size 2831 with 500 cascades is: 4792.243 s
+The edge correctness is:0.02297
+The time in seconds for real network of size 2831 with 1000 cascades is: 9800.859 s
+The edge correctness is:0.03562
+The time in seconds for real network of size 2831 with 2000 cascades is: 19921.457 s
+The edge correctness is:0.05611
+The time in seconds for real network of size 2831 with 3000 cascades is: 32238.911 s
+The edge correctness is:0.07141

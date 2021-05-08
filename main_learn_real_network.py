@@ -9,13 +9,15 @@ import networkx as nx
 
 if __name__ == "__main__":
     exp_type = int(sys.argv[1]) # 0: learn the structure, 1: learn the weight
-    n = int(sys.argv[2]) # the size of the network
+    network_name = str(sys.argv[2]) # newman, bio2, retweet, retweet_2, social
     num_of_cascade = int(sys.argv[3]) # the number of cascades
 
-    path = "random_network/degree_bounded/gnp_" + str(n) + ".npz"
+    path = "real_network/" + network_name + "/" + network_name + ".npz"
     A = sparse.load_npz(path)
-    max_d = 15
+    n = np.shape(A)[0]
+    max_d = 5
     p = 0.15
+    correction = 2
     max_iter = 1000
 
     # The starting processing time
@@ -33,9 +35,9 @@ if __name__ == "__main__":
     # The ending processing time
     end = time.time()
 
-    print("The time in seconds for degree bounded graph of size {} with {} cascades is: {} s".format(n, num_of_cascade, round(end-start, 3)))
+    print("The time in seconds for real network of size {} with {} cascades is: {} s".format(n, num_of_cascade, round(end-start, 3)))
 
     if exp_type == 0:
         print("The edge correctness is:{}".format(round(result, 5)))
     else:
-        print("The average mean error is:{}".format(round(result, 5)))
+        print("The average mean error is:{}".format(round(correction * result, 5)))

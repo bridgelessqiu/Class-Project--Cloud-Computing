@@ -12,7 +12,7 @@ G = nx.generators.random_graphs.fast_gnp_random_graph(n, p)
 
 print(nx.info(G))
 
-path = "gnp_" + str(n) + ".npz"
+path = "degree_bounded/gnp_" + str(n) + ".npz"
 
 A = nx.to_scipy_sparse_matrix(G)
 

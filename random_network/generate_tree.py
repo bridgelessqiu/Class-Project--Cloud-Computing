@@ -11,7 +11,7 @@ G = nx.generators.trees.random_tree(n)
 
 print(nx.info(G))
 
-path = "tree_" + str(n) + ".npz"
+path = "tree/tree_" + str(n) + ".npz"
 
 A = nx.to_scipy_sparse_matrix(G)
 
